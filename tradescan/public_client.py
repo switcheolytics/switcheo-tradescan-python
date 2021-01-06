@@ -150,12 +150,18 @@ class PublicClient(object):
 
     def get_rich_list(self, token):
         api_params = {}
-        if token is not None and token in self.tokens:
-            api_params["token"] = token
+        if token is not None and token.lower() in self.tokens:
+            api_params["token"] = token.lower()
         return self.request.get(path = '/get_rich_list', params = api_params)
 
     def get_staking_pool(self):
         return self.request.get(path = '/staking/pool')
+
+    def get_token(self, token):
+        api_params = {}
+        if token is not None and token.lower() in self.tokens:
+            api_params["token"] = token.lower()
+        return self.request.get(path = '/token', params = api_params)
 
     def get_token_list(self):
         token_list = []
@@ -220,6 +226,13 @@ class PublicClient(object):
             # print(validator["moniker"] + " - " + validator["ip"] + " - " + validator["latestBlockHeight"])
             public_nodes[validator["moniker"]] = validator["ip"]
         return public_nodes
+
+    def get_validator_public_node_ips(self):
+        public_node_ips = []
+        nodes_dict = self.get_validator_public_nodes()
+        for key in nodes_dict.keys():
+            public_node_ips.append(nodes_dict[key])
+        return public_node_ips
 
     def get_validator_missed_blocks(self, address = None):
         validators_missed_blocks = {}
