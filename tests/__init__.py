@@ -41,7 +41,6 @@ class APITestCase(TestCase):
                                       msg=f"Expected field {self.path_to_dict_path(path+[key])} "
                                           f"to be type {expect[key]}, got type {type(actual[key])} instead")
 
-
     @staticmethod
     def path_to_dict_path(path: list) -> str:
         """
