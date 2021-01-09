@@ -308,36 +308,171 @@ class PublicClient(object):
 
         return self.request.get(path='/get_blocks', params=api_params)
 
-    def get_candlesticks(self, market, granularity, from_epoch, to_epoch):
-        api_params = {}
-        api_params["market"] = market
-        if granularity in ['1', '5', '30', '60', '360', '1440']:
-            api_params["resolution"] = granularity
-        api_params["from"] = from_epoch
-        api_params["to"] = to_epoch
-        return self.request.get(path = '/candlesticks', params = api_params)
+    def get_candlesticks(self, market: str, granularity: int, from_epoch: int, to_epoch: int) -> List[dict]:
+        """
+        Get candlesticks for a market.
 
-    def get_delegation_rewards(self, address):
-        api_params = {}
-        api_params["account"] = address
-        return self.request.get(path = '/get_delegation_rewards', params = api_params)
+        Example::
 
-    def get_external_transfers(self, address):
-        api_params = {}
-        api_params["account"] = address
-        return self.request.get(path = '/get_external_transfers', params = api_params)
+            public_client.get_candlesticks("swth_eth1", 5, 1610203000, 1610203090)
+
+        The expected return result for this function is as follows::
+            [
+                {
+                    "id":38648,
+                    "market":"swth_eth1",
+                    "time":"2021-01-09T15:35:00+01:00",
+                    "resolution":5,
+                    "open":"0.0000212",
+                    "close":"0.0000212",
+                    "high":"0.0000212",
+                    "low":"0.0000212",
+                    "volume":"2100",
+                    "quote_volume":"0.04452"
+                }
+            ]
+
+
+        .. warning::
+            This endpoint is not well documented in official documents.
+
+            The example market swth_eth does not exist on mainnet. The correct market ticker is 'swth_eth1'.
+            See get_markets() for correct tickers.
+
+            If any off the required parameters is not provided or incorrect the server responses with 500 status codes.
+
+            Responses are marked as 'plain' and not as 'text/json'.
+
+            This endpoint returns numbers as string(ex. "volume":"2100") or integer(ex. "resolution":5)
+
+
+        :param market: Market ticker used by blockchain (eg. swth_eth1).
+        :param granularity: Candlestick period in minutes, possible values are: 1, 5, 30, 60, 360 or 1440.
+        :param from_epoch: Start of time range for data in epoch seconds.
+        :param to_epoch: End of time range for data in epoch seconds.
+        :return: List with candles as dict
+        """
+        if granularity not in [1, 5, 30, 60, 360, 1440]:
+            raise ValueError(f"Granularity/Resolution has to be on off the following values: 1, 5, 30, 60, 360 or 1440")
+
+        api_params = {
+            "market": market,
+            "resolution": granularity,
+            "from": from_epoch,
+            "to": to_epoch
+        }
+        return self.request.get(path='/candlesticks', params=api_params)
+
+    def get_delegation_rewards(self, swth_address: str) -> dict:
+        """
+        Request delegation rewards made by a tradehub wallet.
+
+        Example::
+
+            # wallet behind Devel And Co validator
+            public_client.get_delegation_rewards("swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl")
+
+        The expected return result for this function is as follows::
+
+            {
+              "height": "6104998",
+              "result": {
+                "rewards": [
+                  {
+                    "validator_address": "swthvaloper1vwges9p847l9csj8ehrlgzajhmt4fcq4dmg8x0",
+                    "reward": [
+                      {
+                        "denom": "swth",
+                        "amount": "7928468882.342780820000000000"
+                      },
+                      ...
+                    ]
+                  },
+                  ...
+                ],
+                "total": [
+                  {
+                    "denom": "cel1",
+                    "amount": "0.032116540000000000"
+                  },
+                  ...
+                ]
+              }
+            }
+
+        .. warning::
+            Only non zero balances are returned. Values are NOT in human readable version even the values contain a
+            decimal separator.
+
+        .. note::
+            This endpoint does not include unclaimed commissions off a validator. If a validator wallet is requested
+            only the rewards earned by delegation are returned.
+
+        :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
+        :return: return dict with generated unclaimed rewards.
+        """
+        api_params = {
+            "account": swth_address,
+        }
+        return self.request.get(path='/get_delegation_rewards', params=api_params)
+
+    def get_external_transfers(self, swth_address: str) -> List[dict]:
+        """
+        Get external transfers(withdraws or deposits) from other blockchains.
+
+        Example::
+
+            # wallet Devel
+            public_client.get_delegation_rewards("swth1qlue2pat9cxx2s5xqrv0ashs475n9va963h4hz")
+
+        The expected return result for this function is as follows::
+
+            [
+                {
+                    "address":"swth1qlue2pat9cxx2s5xqrv0ashs475n9va963h4hz",
+                    "amount":"0.9826",
+                    "block_height":5937838,
+                    "blockchain":"eth",
+                    "contract_hash":"9a016ce184a22dbf6c17daa59eb7d3140dbd1c54",
+                    "denom":"eth1",
+                    "fee_address":"swth1prv0t8j8tqcdngdmjlt59pwy6dxxmtqgycy2h7",
+                    "fee_amount":"0.0174",
+                    "id":"12853",
+                    "status":"success",
+                    "symbol":"ETH",
+                    "timestamp":1609839309,
+                    "token_name":"Ethereum",
+                    "transaction_hash":"",
+                    "transfer_type":"deposit"
+                },
+                ...
+            ]
+
+        .. warning::
+            This endpoint returns numbers as string(ex. "id":"12853") or integer(ex. "timestamp":1609839309)
+
+        .. note::
+            This endpoint return amounts in human readable format.
+
+        :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
+        :return: List with external transfers
+        """
+        api_params = {
+            "account": swth_address
+        }
+        return self.request.get(path='/get_external_transfers', params=api_params)
 
     def get_insurance_fund_balance(self):
-        return self.request.get(path = '/get_insurance_balance')
+        # TODO result currently []
+        return self.request.get(path='/get_insurance_balance')
 
     def get_leverage(self, address, market):
-        '''
-            This appears to be dead.
-        '''
-        api_params = {}
-        api_params["account"] = address
-        api_params["market"] = market
-        return self.request.get(path = '/get_leverage', params = api_params)
+        # TODO result currently not available
+        api_params = {
+            "account": address,
+            "market": market
+        }
+        return self.request.get(path='/get_leverage', params=api_params)
 
     def get_liquidations(self, before_id, after_id, order_by, limit):
         api_params = {}
