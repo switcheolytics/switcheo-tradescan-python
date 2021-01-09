@@ -466,133 +466,540 @@ class PublicClient(object):
         # TODO result currently []
         return self.request.get(path='/get_insurance_balance')
 
-    def get_leverage(self, address, market):
+    def get_leverage(self, swth_address: str, market: str):
         # TODO result currently not available
         api_params = {
-            "account": address,
+            "account": swth_address,
             "market": market
         }
         return self.request.get(path='/get_leverage', params=api_params)
 
-    def get_liquidations(self, before_id, after_id, order_by, limit):
-        api_params = {}
-        api_params["before_id"] = before_id
-        api_params["after_id"] = after_id
-        api_params["order_by"] = order_by
-        api_params["limit"] = limit
-        return self.request.get(path = '/get_liquidations', params = api_params)
+    def get_liquidations(self, before_id: int, after_id: int, order_by: str, limit: int):
+        # TODO result currently not available
+        api_params = {
+            "before_id": before_id,
+            "after_id": after_id,
+            "order_by": order_by,
+            "limit": limit
+        }
+        return self.request.get(path='/get_liquidations', params=api_params)
 
-    def get_market(self, market_symbol):
-        api_params = {}
-        api_params["market"] = market_symbol
-        # if market_symbol is not None and market_symbol in self.markets:
-        #     api_params["market_type"] = market_type
-        return self.request.get(path = '/get_market', params = api_params)
+    def get_market(self, market: str) -> dict:
+        """
+        Get information about a market.
 
-    def get_market_stats(self, market):
-        api_params = {}
-        if market is not None: # and market.lower() in self.markets:
-            api_params["market"] = market.lower()
-        return self.request.get(path = '/get_market_stats', params = api_params)
+        Example::
+            public_client.get_market("swth_eth1")
 
-    def get_markets(self,
-                    market_type = None,
-                    is_active = None,
-                    is_settled = None):
-        api_params = {}
-        if market_type is not None and market_type in ['futures', 'spot']:
-            api_params["market_type"] = market_type
-        if is_active is not None and is_active in [True, False]:
-            api_params["is_active"] = is_active
-        if is_settled is not None and is_settled in [True, False]:
-            api_params["is_settled"] = is_settled
-        return self.request.get(path = '/get_markets', params = api_params)
+        The expected return result for this function is as follows::
 
-    def get_oracle_result(self, oracle_id):
-        api_params = {}
-        api_params["id"] = oracle_id
-        return self.request.get(path = '/get_oracle_result', params = api_params)
+           {
+                "type":"",
+                "name":"swth_eth1",
+                "display_name":"SWTH_ETH",
+                "description":"SWTH/ETH Spot Market",
+                "market_type":"spot",
+                "base":"swth",
+                "base_name":"Switcheo",
+                "base_precision":8,
+                "quote":"eth1",
+                "quote_name":"Ethereum",
+                "quote_precision":18,
+                "lot_size":"1",
+                "tick_size":"0.0000001",
+                "min_quantity":"200",
+                "maker_fee":"-0.0005",
+                "taker_fee":"0.0025",
+                "risk_step_size":"0",
+                "initial_margin_base":"1",
+                "initial_margin_step":"0",
+                "maintenance_margin_ratio":"0",
+                "max_liquidation_order_ticket":"0",
+                "max_liquidation_order_duration":0,
+                "impact_size":"0",
+                "mark_price_band":0,
+                "last_price_protected_band":0,
+                "index_oracle_id":"",
+                "expiry_time":"1970-01-01T01:00:00+01:00",
+                "is_active":true,
+                "is_settled":false,
+                "closed_block_height":0,
+                "created_block_height":0
+            }
+
+        .. warning::
+            This endpoint is not well documented in official documents.
+
+            The example market swth_eth does not exist on mainnet. The correct market ticker is 'swth_eth1'.
+            See get_markets() for correct tickers.
+
+            This endpoint returns numbers as string(eg. "lot_size":"1") or integer(eg. "base_precision":8)
+
+            This endpoint returns the same dict structure even the market does not exist with default values!
+
+        :param market: Market ticker used by blockchain (eg. swth_eth1).
+        :return:
+        """
+        api_params = {
+            "market": market,
+        }
+        return self.request.get(path='/get_market', params=api_params)
+
+    def get_market_stats(self, market: Optional[str] = None) -> List[dict]:
+        """
+        Get statistics about one or all markets.
+
+        Example::
+            public_client.get_market_stats()
+
+        The expected return result for this function is as follows::
+
+            [
+                {
+                    "day_high":"0.0000215",
+                    "day_low":"0.000021",
+                    "day_open":"0.0000211",
+                    "day_close":"0.0000212",
+                    "day_volume":"436030",
+                    "day_quote_volume":"9.2787298",
+                    "index_price":"0",
+                    "mark_price":"0",
+                    "last_price":"212000",
+                    "market":"swth_eth1",
+                    "market_type":"spot",
+                    "open_interest":"0"
+                }
+                ...
+            ]
+
+        .. warning::
+            Values are in human readable format except field: "last_price":"212000" which is: 0.0000212
+
+        .. note::
+            This endpoint does not include unclaimed commissions off a validator. If a validator wallet is requested
+            only the rewards earned by delegation are returned.
+
+        :param market: Market ticker used by blockchain (eg. swth_eth1).
+        :return: List with market stats as dict
+        """
+        api_params = {
+            "market": market
+        }
+        return self.request.get(path='/get_market_stats', params=api_params)
+
+    def get_markets(self, market_type: Optional[str] = None, is_active: Optional[bool] = None, is_settled: Optional[bool] = None) -> List[dict]:
+        """
+        Get all markets or filter markets.
+
+        Example::
+
+            public_client.get_markets()
+
+        The expected return result for this function is as follows::
+
+            [
+                {
+                    "type":"",
+                    "name":"swth_eth1",
+                    "display_name":"SWTH_ETH",
+                    "description":"SWTH/ETH Spot Market",
+                    "market_type":"spot",
+                    "base":"swth",
+                    "base_name":"Switcheo",
+                    "base_precision":8,
+                    "quote":"eth1",
+                    "quote_name":"Ethereum",
+                    "quote_precision":18,
+                    "lot_size":"1",
+                    "tick_size":"0.0000001",
+                    "min_quantity":"200",
+                    "maker_fee":"-0.0005",
+                    "taker_fee":"0.0025",
+                    "risk_step_size":"0",
+                    "initial_margin_base":"1",
+                    "initial_margin_step":"0",
+                    "maintenance_margin_ratio":"0",
+                    "max_liquidation_order_ticket":"0",
+                    "max_liquidation_order_duration":0,
+                    "impact_size":"0",
+                    "mark_price_band":0,
+                    "last_price_protected_band":0,
+                    "index_oracle_id":"",
+                    "expiry_time":"1970-01-01T01:00:00+01:00",
+                    "is_active":true,
+                    "is_settled":false,
+                    "closed_block_height":0,
+                    "created_block_height":0
+                },
+                ...
+            ]
+
+        .. warning::
+            This endpoint returns numbers as string(eg. "lot_size":"1") or integer(eg. "base_precision":8)
+
+        :param market_type: type of the market can be 'futures' or 'spot'
+        :param is_active: if only active markets should be returned
+        :param is_settled: if only settled markets should be returned
+        :return: List with returned market stats as dict
+        """
+
+        if market_type not in ['futures', 'spot']:
+            raise ValueError(f"Parameter 'market_type' only can be 'futures' or 'spot'. Got {market_type} instead.")
+
+        api_params = {
+            "market_type": market_type,
+            "is_active": is_active,
+            "is_settled": is_settled
+        }
+
+        return self.request.get(path='/get_markets', params=api_params)
+
+    def get_oracle_result(self, oracle_id: str):
+        # TODO no results yet available
+        api_params = {
+            "id": oracle_id
+        }
+        return self.request.get(path='/get_oracle_result', params=api_params)
 
     def get_oracle_results(self):
-        return self.request.get(path = '/get_oracle_results')
+        # TODO no results yet available
+        return self.request.get(path='/get_oracle_results')
 
-    def get_orderbook(self, market, limit = None):
-        api_params = {}
-        if market is not None: # and market.lower() in self.markets:
-            api_params["market"] = market.lower()
-        if limit is not None and limit > 0:
-            api_params["limit"] = limit
-        return self.request.get(path = '/get_orderbook', params = api_params)
+    def get_orderbook(self, market: str, limit: Optional[int] = None):
+        """
+        Get the orderbook from a market.
 
-    def get_order(self, order_id):
-        api_params = {}
-        api_params["order_id"] = order_id
-        return self.request.get(path = '/get_order', params = api_params)
+        Example::
 
-    def get_orders(self, address = None):
-        '''
-            Documentation states that address is required but it looks like you can pass this without and address
-            and it will return the last 200 orders. Most likely means you can also pass limit and pagination to this.
-        '''
-        api_params = {}
-        if address is not None:
-            api_params["account"] = address
-        return self.request.get(path = '/get_orders', params = api_params)
+            public_client.get_orderbook("swth_eth1")
 
-    def get_position(self, address, market):
-        '''
-            This appears to be dead.
-        '''
-        api_params = {}
-        api_params["account"] = address
-        api_params["market"] = market
-        return self.request.get(path = '/get_postion', params = api_params)
+        The expected return result for this function is as follows::
 
-    def get_positions(self, address):
-        '''
-            This appears to be dead.
-        '''
-        api_params = {}
-        api_params["account"] = address
-        return self.request.get(path = '/get_postions', params = api_params)
+            {
+                "asks": [
+                    {
+                        "price":"0.0000214",
+                        "quantity":"49863"
+                    },
+                    {
+                        "price":"0.0000215",
+                        "quantity":"49446"
+                    },
+                    ...
+                ],
+                "bids": [
+                    {
+                        "price":"0.0000212",
+                        "quantity":"50248"
+                    },
+                    {
+                        "price":"0.0000211",
+                        "quantity":"50295"
+                    },
+                    ...
+                ]
+            }
+
+         .. warning::
+            This endpoint returns an empty 'asks' and 'bids' list if the market is not known.
+
+        :param market: Market ticker used by blockchain (eg. swth_eth1).
+        :param limit: Number off returned orders per side(asks, bids).
+        :return: Orderbook as 'asks' and 'bids' list
+        """
+        api_params = {
+            "market": market,
+            "limit": limit
+        }
+        return self.request.get(path='/get_orderbook', params=api_params)
+
+    def get_order(self, order_id: str) -> dict:
+        """
+        Get a specific order by id.
+
+        Example::
+
+            public_client.get_order("4F54D2AE0D793F833806109B4278335BF3D392D4096B682B9A27AF9F8A8BCA58")
+
+        The expected return result for this function is as follows:
+
+            {
+                "order_id":"4F54D2AE0D793F833806109B4278335BF3D392D4096B682B9A27AF9F8A8BCA58",
+                "block_height":6117321,
+                "triggered_block_height":0,
+                "address":"swth1wmcj8gmz4tszy5v8c0d9lxnmguqcdkw22275w5",
+                "market":"eth1_usdc1",
+                "side":"buy",
+                "price":"1255.68",
+                "quantity":"0.01",
+                "available":"0.01",
+                "filled":"0",
+                "order_status":"open",
+                "order_type":"limit",
+                "initiator":"amm",
+                "time_in_force":"gtc",
+                "stop_price":"0",
+                "trigger_type":"",
+                "allocated_margin_denom":"usdc1",
+                "allocated_margin_amount":"0",
+                "is_liquidation":false,
+                "is_post_only":false,
+                "is_reduce_only":false,
+                "type":"",
+                "block_created_at":"2021-01-09T22:13:34.711571+01:00",
+                "username":"",
+                "id":"990817"
+            }
+
+        :param order_id: Order identified by id
+        :return: Order as dict
+        """
+        api_params = {
+            "order_id": order_id
+        }
+        return self.request.get(path='/get_order', params=api_params)
+
+    def get_orders(self, swth_address: Optional[str] = None, before_id: Optional[int] = None,
+                   after_id: Optional[int] = None, market: Optional[str] = None, order_type: Optional[str] = None,
+                   initiator: Optional[str] = None, order_status: Optional[str] = None, limit: Optional[int] = None) -> List[dict]:
+        """
+        Request last orders or filter them.
+
+        Example::
+
+            public_client.get_orders()
+
+        The expected return result for this function is as follows::
+
+            [
+                {
+                    "order_id":"4F54D2AE0D793F833806109B4278335BF3D392D4096B682B9A27AF9F8A8BCA58",
+                    "block_height":6117321,
+                    "triggered_block_height":0,
+                    "address":"swth1wmcj8gmz4tszy5v8c0d9lxnmguqcdkw22275w5",
+                    "market":"eth1_usdc1",
+                    "side":"buy",
+                    "price":"1255.68",
+                    "quantity":"0.01",
+                    "available":"0.01",
+                    "filled":"0",
+                    "order_status":"open",
+                    "order_type":"limit",
+                    "initiator":"amm",
+                    "time_in_force":"gtc",
+                    "stop_price":"0",
+                    "trigger_type":"",
+                    "allocated_margin_denom":"usdc1",
+                    "allocated_margin_amount":"0",
+                    "is_liquidation":false,
+                    "is_post_only":false,
+                    "is_reduce_only":false,
+                    "type":"",
+                    "block_created_at":"2021-01-09T22:13:34.711571+01:00",
+                    "username":"",
+                    "id":"990817"
+                },
+                ...
+            ]
+
+        .. warning::
+            This endpoint is not well documented in official documents.
+            Parameter account is NOT required! It is possible to give more parameters, known ones are documented here.
+
+            This endpoint returns numbers as string(eg. "id":"990817") or integer(eg. "block_height":6117321)
+
+        :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
+        :param before_id: return orders before id(exclusive)
+        :param after_id: return orders after id(exclusive)
+        :param market: Market ticker used by blockchain (eg. swth_eth1).
+        :param order_type: Return specific orders, allowed values: 'limit', 'market', 'stop-market' or 'stop-limit'
+        :param initiator: Filter by user oder automated market maker order, allowed values: 'user' or 'amm'
+        :param order_status: Filter by order status, allowed values: 'open' or 'closed'
+        :param limit: Limit response, values above 200 have no effect
+        :return: List off orders as dict
+        """
+        api_params = {
+            "account": swth_address,
+            "before_id": before_id,
+            "after_id": after_id,
+            "market": market,
+            "order_type": order_type,
+            "initiator": initiator,
+            "order_status": order_status,
+            "limit": limit
+        }
+        return self.request.get(path='/get_orders', params=api_params)
+
+    def get_position(self, swth_address: str, market: str):
+        # TODO responses currently not available
+        api_params = {
+            "account": swth_address,
+            "market": market
+        }
+        return self.request.get(path='/get_position', params=api_params)
+
+    def get_positions(self, swth_address: str):
+        # TODO responses currently not available
+        api_params = {
+            "account": swth_address
+        }
+        return self.request.get(path='/get_positions', params=api_params)
 
     def get_positions_sorted_by_pnl(self, market):
-        api_params = {}
-        api_params["market"] = market
-        return self.request.get(path = '/get_positions_sorted_by_pnl', params = api_params)
+        # TODO responses currently not available
+        api_params = {
+            "market": market
+        }
+        return self.request.get(path='/get_positions_sorted_by_pnl', params=api_params)
 
     def get_positions_sorted_by_risk(self, market):
-        '''
-            This appears to be dead.
-        '''
-        api_params = {}
-        api_params["market"] = market
-        return self.request.get(path = '/get_positions_sorted_by_risk', params = api_params)
+        # TODO responses currently not available
+        api_params = {
+            "market": market
+        }
+        return self.request.get(path='/get_positions_sorted_by_risk', params=api_params)
 
     def get_positions_sorted_by_size(self, market):
-        api_params = {}
-        api_params["market"] = market
-        return self.request.get(path = '/get_positions_sorted_by_size', params = api_params)
+        # TODO responses currently not available
+        api_params = {
+            "market": market
+        }
+        return self.request.get(path='/get_positions_sorted_by_size', params=api_params)
 
-    def get_prices(self, market):
-        api_params = {}
-        if market is not None: # and market.lower() in self.markets:
-            api_params["market"] = market.lower()
-        return self.request.get(path = '/get_prices', params = api_params)
+    def get_prices(self, market: Optional[str]) -> dict:
+        """
+        Get prices off a market.
 
-    def get_profile(self, address):
-        api_params = {}
-        api_params["account"] = address
-        return self.request.get(path = '/get_profile', params = api_params)
+        Example::
 
-    def get_rich_list(self):
+            public_client.get_prices("swth_eth1")
+
+        The expected return result for this function is as follows::
+
+            {
+                "last":"207000",
+                "index":"0",
+                "fair":"0",
+                "mark":"0",
+                "mark_avg":"0",
+                "settlement":"0",
+                "fair_index_delta_avg":"0",
+                "market":"",
+                "marking_strategy":"",
+                "index_updated_at":"0001-01-01T00:00:00Z",
+                "last_updated_at":"2021-01-09T22:50:59.068526+01:00",
+                "block_height":0
+            }
+
+        .. warning::
+            This endpoint is not well documented in official documents.
+            Parameter 'market' is NOT required, but strongly recommended. The return result has an empty 'market' field.
+
+            This endpoint returns amounts which are NOT human readable values. Consider 'base_precision' and
+            'quote_precision' to calculate a multiplication factor = 10 ^ ('base_precision' - 'quote_precision')
+
+            This endpoint returns numbers as string(eg. "last":"207000") or integer(eg. "block_height":0)
+
+        :param market: Market ticker used by blockchain (eg. swth_eth1).
+        :return: Prices as dict
+        """
+        api_params = {
+            "market": market
+        }
+        return self.request.get(path='/get_prices', params=api_params)
+
+    def get_profile(self, swth_address: str) -> dict:
+        """
+        Get profile from a tradehub wallet.
+
+        Example::
+
+            public_client.get_profile("swth1qlue2pat9cxx2s5xqrv0ashs475n9va963h4hz")
+
+        The expected return result for this function is as follows::
+
+            {
+                "address":"swth1qlue2pat9cxx2s5xqrv0ashs475n9va963h4hz",
+                "last_seen_block":"6036318",
+                "last_seen_time":"2021-01-07T21:47:14.593249+01:00",
+                "twitter":"",
+                "username":"devel484"
+            }
+
+
+        :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
+        :return: Profile as dict
+        """
+        api_params = {
+            "account": swth_address
+        }
+        return self.request.get(path='/get_profile', params=api_params)
+
+    def get_rich_list(self, token: str):
         '''
             This does not appear to be working.
         '''
-        return self.request.get(path = '/get_rich_list')
+        api_params = {
+            "token": token
+        }
+        return self.request.get(path='/get_rich_list', params=api_params)
 
-    def get_status(self):
-        return self.request.get(path = '/get_status')
+    def get_status(self) -> dict:
+        """
+        Return cosmos RPC status endpoint.
+
+        Example::
+
+            public_client.get_status()
+
+        The expected return result for this function is as follows::
+
+            {
+              "jsonrpc": "2.0",
+              "id": -1,
+              "result": {
+                "node_info": {
+                  "protocol_version": {
+                    "p2p": "7",
+                    "block": "10",
+                    "app": "0"
+                  },
+                  "id": "f4cee80e4dec5a686139cb82729118e15f7ce19c",
+                  "listen_addr": "tcp://0.0.0.0:26656",
+                  "network": "switcheo-tradehub-1",
+                  "version": "0.33.7",
+                  "channels": "4020212223303800",
+                  "moniker": "Devel Sentry Node 2",
+                  "other": {
+                    "tx_index": "on",
+                    "rpc_address": "tcp://0.0.0.0:26659"
+                  }
+                },
+                "sync_info": {
+                  "latest_block_hash": "4A2C89C105D7864AA74C9DE4752AF5B59E96045EBAF984C69DD447C4524EC36F",
+                  "latest_app_hash": "773651392EEDBFF6AEE088F76E7D75F2932B4D9F74CA27D568F706ADFC12B174",
+                  "latest_block_height": "6119142",
+                  "latest_block_time": "2021-01-09T22:18:52.722611018Z",
+                  "earliest_block_hash": "B4AF1F3D3D3FD5795BDDB7A6A2E6CA4E34D06338505D6EC46DD8F99E72ADCDAB",
+                  "earliest_app_hash": "",
+                  "earliest_block_height": "1",
+                  "earliest_block_time": "2020-08-14T07:32:27.856700491Z",
+                  "catching_up": false
+                },
+                "validator_info": {
+                  "address": "DCB03C204B7F94765B4ADCE1D8BEE88AA43AE811",
+                  "pub_key": {
+                    "type": "tendermint/PubKeyEd25519",
+                    "value": "1GmDSymN6jTqQlZA2KeyzqknIncGMMrwnnas/DWGNOI="
+                  },
+                  "voting_power": "0"
+                }
+              }
+            }
+
+        :return: Status as dict
+        """
+        return self.request.get(path='/get_status')
 
     def get_transaction(self, hash):
         api_params = {}
@@ -602,18 +1009,61 @@ class PublicClient(object):
     def get_transaction_types(self):
         return self.request.get(path = '/get_transaction_types')
 
-    def get_transactions(self, address, msg_type, height, start_block, end_block, before_id, after_id, order_by, limit):
-        api_params = {}
-        api_params["address"] = address
-        api_params["msg_type"] = msg_type
-        api_params["height"] = height
-        api_params["start_block"] = start_block
-        api_params["end_block"] = end_block
-        api_params["before_id"] = before_id
-        api_params["after_id"] = after_id
-        api_params["order_by"] = order_by
-        api_params["limit"] = limit
-        return self.request.get(path = '/get_transactions', params = api_params)
+    def get_transactions(self, swth_address: Optional[str] = None, msg_type: Optional[str] = None,
+                         height: Optional[int] = None, start_block: Optional[int] = None,
+                         end_block: Optional[int] = None, before_id: Optional[int] = None,
+                         after_id: Optional[int] = None, order_by: Optional[str] = None,
+                         limit: Optional[int] = None) -> List[dict]:
+        """
+        Get latest transactions or filter them.
+
+        Example::
+
+            public_client.get_transactions()
+
+        The expected return result for this function is as follows::
+
+            [
+                {
+                    "id":"322811",
+                    "hash":"9742B27016F08484D8FADFD361C34563F3FDA92A36A8DD3B844A2F86E3552451",
+                    "address":"swth1xkahzn8ymps6xdu6feulutawu42fkyqz5fgvhx",
+                    "username":"",
+                    "msg_type":"create_order",
+                    "msg":"{\"market\":\"eth1_usdc1\",\"side\":\"buy\",\"quantity\":\"0.019\",\"type\":\"limit\",\"price\":\"1283.98\",\"is_post_only\":false,\"is_reduce_only\":false,\"originator\":\"swth1xkahzn8ymps6xdu6feulutawu42fkyqz5fgvhx\"}",
+                    "code":"0",
+                    "gas_used":"140666",
+                    "gas_limit":"100000000000",
+                    "memo":"",
+                    "height":"6119373",
+                    "block_time":"2021-01-09T23:27:10.247711+01:00"
+                },
+                ...
+            ]
+
+        :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
+        :param msg_type: filter by msg_type, allowed values can be fetch with 'get_transaction_types'
+        :param height: get order at a specific height
+        :param start_block: get orders after block(exclusive)
+        :param end_block: get orders before block(exclusive)
+        :param before_id: get orders before id(exclusive)
+        :param after_id: get orders after id(exclusive)
+        :param order_by: TODO no official documentation
+        :param limit: limit the responded result, values above 200 have no effect
+        :return: List with transactions as dict
+        """
+        api_params = {
+            "address": swth_address,
+            "msg_type": msg_type,
+            "height": height,
+            "start_block": start_block,
+            "end_block": end_block,
+            "before_id": before_id,
+            "after_id": after_id,
+            "order_by": order_by,
+            "limit": limit
+        }
+        return self.request.get(path='/get_transactions', params=api_params)
 
     def get_token(self, token):
         '''
