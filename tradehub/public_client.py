@@ -935,9 +935,7 @@ class PublicClient(object):
         return self.request.get(path='/get_profile', params=api_params)
 
     def get_rich_list(self, token: str):
-        '''
-            This does not appear to be working.
-        '''
+        # TODO responses currently not available
         api_params = {
             "token": token
         }
@@ -1000,13 +998,65 @@ class PublicClient(object):
         """
         return self.request.get(path='/get_status')
 
-    def get_transaction(self, hash):
-        api_params = {}
-        api_params["hash"] = hash
-        return self.request.get(path = '/get_transaction', params = api_params)
+    def get_transaction(self, tx_hash: str):
+        """
+        Get a transaction by providing the hash.
 
-    def get_transaction_types(self):
-        return self.request.get(path = '/get_transaction_types')
+        Example::
+
+            public_client.get_transaction("A93BEAC075562D4B6031262BDDE8B9A720346A54D8570A881E3671FEB6E6EFD4")
+
+        The expected return result for this function is as follows::
+
+            {
+                "id":"311003",
+                "hash":"A93BEAC075562D4B6031262BDDE8B9A720346A54D8570A881E3671FEB6E6EFD4",
+                "address":"swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl",
+                "username":"",
+                "msg_type":"vote",
+                "msg":"{\"proposal_id\":10,\"voter\":\"swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl\",\"option\":\"Yes\"}",
+                "code":"0",
+                "gas_used":"64818",
+                "gas_limit":"200000",
+                "memo":"",
+                "height":"6034329",
+                "block_time":"2021-01-07T20:35:08.526914+01:00"
+            }
+
+        .. warning::
+
+            This endpoint returns the same dict structure even if the transaction does not exist with default values!
+
+
+        :param tx_hash:
+        :return:
+        """
+        api_params = {
+            "hash": tx_hash
+        }
+        return self.request.get(path='/get_transaction', params=api_params)
+
+    def get_transaction_types(self) -> List[str]:
+        """
+        Get transaction types used by tradehub.
+
+        Example::
+
+            public_client.get_transaction_types()
+
+        The expected return result for this function is as follows::
+
+            [
+                "submit_proposal",
+                "create_pool",
+                "set_reward_curve",
+                "send",
+                ...
+            ]
+
+        :return: List with transaction types as strings.
+        """
+        return self.request.get(path='/get_transaction_types')
 
     def get_transactions(self, swth_address: Optional[str] = None, msg_type: Optional[str] = None,
                          height: Optional[int] = None, start_block: Optional[int] = None,
@@ -1108,42 +1158,128 @@ class PublicClient(object):
             token_list.append(token["denom"])
         return token_list
 
-    def get_tokens(self):
+    def get_tokens(self) -> List[dict]:
+        """
+        Get all known tokens on tradehub chain.
+
+        Example::
+
+            public_client.get_tokens()
+
+        The expected return result for this function is as follows::
+
+            [
+                {
+                    "name":"Switcheo",
+                    "symbol":"swth",
+                    "denom":"swth",
+                    "decimals":8,
+                    "blockchain":"neo",
+                    "chain_id":4,
+                    "asset_id":"32e125258b7db0a0dffde5bd03b2b859253538ab",
+                    "is_active":true,
+                    "is_collateral":false,
+                    "lock_proxy_hash":"17d0f66eca7fcbfddc8d9706f20513bf5d7419cd",
+                    "delegated_supply":"100000000000000000",
+                    "originator":"swth1mw90en8tcqnvdjhp64qmyhuq4qasvhy25dpmvw"
+                },
+                ...
+            ]
+
+        .. warning::
+            This endpoint returns numbers as string(eg. "delegated_supply":"100000000000000000") or integer(eg. "decimals":8)
+
+        :return: List with tokens as dict
+        """
         return self.request.get(path='/get_tokens')
 
-    def get_top_r_profits(self, market, limit):
-        api_params = {}
-        api_params["market"] = market
-        api_params["limit"] = limit
-        return self.request.get(path = '/get_top_r_profits', params = api_params)
+    def get_top_r_profits(self, market: str, limit: int):
+        # TODO responses currently not available
+        api_params = {
+            "market": market,
+            "limit": limit
+        }
+        return self.request.get(path='/get_top_r_profits', params=api_params)
 
     def get_total_balances(self):
-        '''
-            This doesn't appear to be working.
-        '''
-        return self.request.get(path = '/get_total_balances')
+        # TODO responses currently not available
+        return self.request.get(path='/get_total_balances')
 
-    def get_trades(self, market, before_id, after_id, order_by, limit):
-        api_params = {}
-        api_params["market"] = market
-        api_params["before_id"] = before_id
-        api_params["after_id"] = after_id
-        api_params["order_by"] = order_by
-        api_params["limit"] = limit
-        return self.request.get(path = '/get_trades', params = api_params)
+    def get_trades(self, market: Optional[str] = None, before_id: Optional[int] = None, after_id: Optional[int] = None,
+                   order_by: Optional[str] = None, limit: Optional[int] = None,
+                   swth_address: Optional[str] = None) -> List[dict]:
+        """
+        Get recent trades or filter trades.
 
-    def get_trades_by_account(self, before_id, after_id, order_by, limit):
-        '''
-            This appears to be dead.
-        '''
-        api_params = {}
-        api_params["before_id"] = before_id
-        api_params["after_id"] = after_id
-        api_params["order_by"] = order_by
-        api_params["limit"] = limit
-        return self.request.get(path = '/get_trades_by_account', params = api_params)
+        Example::
 
-    def get_username_check(self, username):
-        api_params = {}
-        api_params["username"] = username
-        return self.request.get(path = '/username_check', params = api_params)
+            public_client.get_trades()
+
+        The expected return result for this function is as follows::
+
+            [
+                {
+                    "id":"103965",
+                    "block_created_at":"2021-01-10T21:59:53.563633+01:00",
+                    "taker_id":"11DCD0B7B0A0021476B8C801FD627B297EBDBBE7436BFEEC5ADB734DCF3C9291",
+                    "taker_address":"swth1qlue2pat9cxx2s5xqrv0ashs475n9va963h4hz",
+                    "taker_fee_amount":"0.000007",
+                    "taker_fee_denom":"eth1",
+                    "taker_side":"buy",
+                    "maker_id":"A59962E7A61F361F7DE5BF00D7A6A8225668F449D73301FB9D3787E4C13DEE60",
+                    "maker_address":"swth1wmcj8gmz4tszy5v8c0d9lxnmguqcdkw22275w5",
+                    "maker_fee_amount":"-0.0000035",
+                    "maker_fee_denom":"eth1",
+                    "maker_side":"sell",
+                    "market":"eth1_usdc1",
+                    "price":"1251.51",
+                    "quantity":"0.007",
+                    "liquidation":"",
+                    "taker_username":"devel484",
+                    "maker_username":"",
+                    "block_height":"6156871"
+                },
+                ...
+            ]
+
+
+        :param market: Market ticker used by blockchain (eg. swth_eth1).
+        :param before_id: get orders before id(exclusive).
+        :param after_id: get orders after id(exclusive).
+        :param order_by: TODO no official documentation.
+        :param limit: limit the responded result, values above 200 have no effect.
+        :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
+        :return: List off trades as dict
+        """
+        api_params = {
+            "market": market,
+            "before_id": before_id,
+            "after_id": after_id,
+            "order_by": order_by,
+            "limit": limit,
+            "account": swth_address
+        }
+        return self.request.get(path='/get_trades', params=api_params)
+
+    def get_username_check(self, username: str) -> bool:
+        """
+        Check if a username is taken or not.
+
+         Example::
+
+            public_client.get_username_check("devel484")
+
+        The expected return result for this function is as follows::
+
+            true
+
+        .. warning::
+            This endpoint do not return a JSON response, only true or false
+
+        :param username: name to check
+        :return: True if is taken and false if free
+        """
+        api_params = {
+            "username": username
+        }
+        return self.request.get(path='/username_check', params=api_params)
