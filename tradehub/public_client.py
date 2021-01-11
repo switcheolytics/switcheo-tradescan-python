@@ -31,18 +31,6 @@ class PublicClient(object):
 
         self.api_url: str = uri or f"http://{node_ip}:{node_port}"
         self.request: Request = Request(api_url=self.api_url, timeout=30)
-        # self.validators = self.get_validator_public_nodes()
-        # self.transaction_types = self.get_transaction_types()
-        self.tokens: List[dict] = self.get_token_list()
-
-
-    # def get_address_rewards(self, address):
-    #     if address is not None and isinstance(address, str):
-    #         return self.request.get(path = '/distribution/delegators/' + address + '/rewards')
-
-    # def get_address_staking(self, address):
-    #     if address is not None and isinstance(address, str):
-    #         return self.request.get(path = '/staking/delegators/' + address + '/delegations')
 
     def get_account(self, swth_address: str) -> dict:
         """
@@ -101,6 +89,11 @@ class PublicClient(object):
               }
             }
 
+        .. note:
+            This endpoint returns numbers which are NOT human readable values. Consider 'base_precision' and
+            'quote_precision' to calculate a multiplication factor = 10 ^ ('base_precision' - 'quote_precision').
+            See 'get_markets'
+
         :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
         :return: json response
         """
@@ -112,6 +105,7 @@ class PublicClient(object):
     def get_address(self, username: str) -> str:
         """
         Request swth1 tradehub address which is represented by a username.
+
         Example::
 
             public_client.get_address("devel484")
@@ -120,9 +114,14 @@ class PublicClient(object):
 
             "swth1qlue2pat9cxx2s5xqrv0ashs475n9va963h4hz"
 
-        .. warning:: This endpoint returns only a string if address is found. If no address is found an exception with status code 404 will be raised.
+        .. warning::
+            This endpoint returns only a string if address is found. If no address is found an exception with
+            status code 404 will be raised.
 
-        :param username: Username is lower case
+        .. note::
+            Usernames are in lowercase and can only be 15 characters long.
+
+        :param username: Username is lower case.
         :return: swth1 address if found
         """
         api_params = {
@@ -173,8 +172,14 @@ class PublicClient(object):
                 ...
             ]
 
-        .. warning:: The response from this endpoint uses different types off name conventions! For example 'UpperCamelCase' and 'snake_case'.
-        :return: list with validators
+        .. warning::
+            The response from this endpoint uses different types off name conventions!
+            For example 'MinSelfDelegation' and 'max_change_rate'.
+
+        .. warning::
+            This endpoint returns numbers as string(eg. "volume":"2100") or integer(eg. "resolution":5)
+
+        :return: list with validators.
         """
         return self.request.get(path='/get_all_validators')
 
@@ -235,7 +240,10 @@ class PublicClient(object):
             }
 
         .. note::
-            Only non zero balances are returned. Values are already in human readable version.
+            Only non zero balances are returned.
+
+        .. note::
+            Values are already in human readable format.
 
         :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
         :return: dict with currently holding tokens.
@@ -247,7 +255,7 @@ class PublicClient(object):
 
     def get_block_time(self) -> str:
         """
-        Get the block time in format HH:MM:SS.ZZZZZZ
+        Get the block time in format HH:MM:SS.ZZZZZZ.
 
         Example::
 
@@ -257,9 +265,10 @@ class PublicClient(object):
 
             "00:00:02.190211"
 
-        .. warning:: This endpoint returns only a string.
+        .. warning::
+            This endpoint returns only a string.
 
-        :return: block time as string
+        :return: block time as string.
         """
         return self.request.get(path='/get_block_time')
 
@@ -291,12 +300,14 @@ class PublicClient(object):
 
         .. warning:: This endpoint is not well documented in official documents. The parameters are NOT required.
 
-        :param before_id: Before block height(exclusive)
-        :param after_id: After block height(exclusive)
-        :param order_by: Not specified yet
-        :param swth_valcons: Switcheo tradehub validator consensus starting with 'swthvalcons1' on mainnet and 'tswthvalcons1' on testnet.
-        :param limit: Limit the responded result. Values greater than 200 have no effect and a maximum off 200 results are returned.
-        :return: List with found blocks matching the requested parameters. Can be empty list []
+        :param before_id: Before block height(exclusive).
+        :param after_id: After block height(exclusive).
+        :param order_by: Not specified yet.
+        :param swth_valcons: Switcheo tradehub validator consensus starting with 'swthvalcons1' on mainnet and
+            'tswthvalcons1' on testnet.
+        :param limit: Limit the responded result. Values greater than 200 have no effect and a maximum off 200
+            results are returned.
+        :return: List with found blocks matching the requested parameters. Can be empty list [].
         """
         api_params = {
             "before_id": before_id,
@@ -317,6 +328,7 @@ class PublicClient(object):
             public_client.get_candlesticks("swth_eth1", 5, 1610203000, 1610203090)
 
         The expected return result for this function is as follows::
+
             [
                 {
                     "id":38648,
@@ -329,28 +341,37 @@ class PublicClient(object):
                     "low":"0.0000212",
                     "volume":"2100",
                     "quote_volume":"0.04452"
-                }
+                },
+                ...
             ]
 
 
         .. warning::
-            This endpoint is not well documented in official documents.
 
+            This endpoint is not well documented in official documents.
             The example market swth_eth does not exist on mainnet. The correct market ticker is 'swth_eth1'.
             See get_markets() for correct tickers.
 
+        .. warning::
+
             If any off the required parameters is not provided or incorrect the server responses with 500 status codes.
+
+        .. warning::
 
             Responses are marked as 'plain' and not as 'text/json'.
 
+        .. warning::
+
             This endpoint returns numbers as string(ex. "volume":"2100") or integer(ex. "resolution":5)
+
+        :raises ValueError: If 'granularity' is not 1, 5, 30, 60, 360 or 1440.
 
 
         :param market: Market ticker used by blockchain (eg. swth_eth1).
         :param granularity: Candlestick period in minutes, possible values are: 1, 5, 30, 60, 360 or 1440.
         :param from_epoch: Start of time range for data in epoch seconds.
         :param to_epoch: End of time range for data in epoch seconds.
-        :return: List with candles as dict
+        :return: List with candles as dict.
         """
         if granularity not in [1, 5, 30, 60, 360, 1440]:
             raise ValueError(f"Granularity/Resolution has to be on off the following values: 1, 5, 30, 60, 360 or 1440")
@@ -401,10 +422,20 @@ class PublicClient(object):
             }
 
         .. warning::
-            Only non zero balances are returned. Values are NOT in human readable version even the values contain a
-            decimal separator.
+
+            Only non zero balances are returned.
+
+        .. warning::
+
+            Values are NOT in human readable format even if the values contain a decimal separator.
+
+        .. warning::
+
+            This endpoint returns amounts which are NOT human readable values. Consider 'base_precision' and
+            'quote_precision' to calculate a multiplication factor = 10 ^ ('base_precision' - 'quote_precision')
 
         .. note::
+
             This endpoint does not include unclaimed commissions off a validator. If a validator wallet is requested
             only the rewards earned by delegation are returned.
 
@@ -449,9 +480,11 @@ class PublicClient(object):
             ]
 
         .. warning::
-            This endpoint returns numbers as string(ex. "id":"12853") or integer(ex. "timestamp":1609839309)
+
+            This endpoint returns numbers as string(eg. "id":"12853") or integer(eg. "timestamp":1609839309)
 
         .. note::
+
             This endpoint return amounts in human readable format.
 
         :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
@@ -467,6 +500,16 @@ class PublicClient(object):
         return self.request.get(path='/get_insurance_balance')
 
     def get_leverage(self, swth_address: str, market: str):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :param swth_address:
+        :param market:
+        :return:
+        """
         # TODO result currently not available
         api_params = {
             "account": swth_address,
@@ -475,6 +518,18 @@ class PublicClient(object):
         return self.request.get(path='/get_leverage', params=api_params)
 
     def get_liquidations(self, before_id: int, after_id: int, order_by: str, limit: int):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :param before_id:
+        :param after_id:
+        :param order_by:
+        :param limit:
+        :return:
+        """
         # TODO result currently not available
         api_params = {
             "before_id": before_id,
@@ -489,6 +544,7 @@ class PublicClient(object):
         Get information about a market.
 
         Example::
+
             public_client.get_market("swth_eth1")
 
         The expected return result for this function is as follows::
@@ -528,12 +584,16 @@ class PublicClient(object):
             }
 
         .. warning::
-            This endpoint is not well documented in official documents.
 
+            This endpoint is not well documented in official documents.
             The example market swth_eth does not exist on mainnet. The correct market ticker is 'swth_eth1'.
             See get_markets() for correct tickers.
 
-            This endpoint returns numbers as string(eg. "lot_size":"1") or integer(eg. "base_precision":8)
+        .. warning::
+
+            This endpoint returns numbers as string(eg. "lot_size":"1") or integer(eg. "base_precision":8).
+
+        .. warning::
 
             This endpoint returns the same dict structure even the market does not exist with default values!
 
@@ -550,6 +610,7 @@ class PublicClient(object):
         Get statistics about one or all markets.
 
         Example::
+
             public_client.get_market_stats()
 
         The expected return result for this function is as follows::
@@ -573,11 +634,10 @@ class PublicClient(object):
             ]
 
         .. warning::
-            Values are in human readable format except field: "last_price":"212000" which is: 0.0000212
+            Values are in human readable format EXCEPT field: "last_price":"212000" which is: 0.0000212.
+            Consider 'base_precision' and 'quote_precision' to calculate a multiplication
+            factor = 10 ^ ('base_precision' - 'quote_precision')
 
-        .. note::
-            This endpoint does not include unclaimed commissions off a validator. If a validator wallet is requested
-            only the rewards earned by delegation are returned.
 
         :param market: Market ticker used by blockchain (eg. swth_eth1).
         :return: List with market stats as dict
@@ -655,6 +715,15 @@ class PublicClient(object):
         return self.request.get(path='/get_markets', params=api_params)
 
     def get_oracle_result(self, oracle_id: str):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :param oracle_id:
+        :return:
+        """
         # TODO no results yet available
         api_params = {
             "id": oracle_id
@@ -662,6 +731,14 @@ class PublicClient(object):
         return self.request.get(path='/get_oracle_result', params=api_params)
 
     def get_oracle_results(self):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :return:
+        """
         # TODO no results yet available
         return self.request.get(path='/get_oracle_results')
 
@@ -700,7 +777,8 @@ class PublicClient(object):
                 ]
             }
 
-         .. warning::
+        .. warning::
+
             This endpoint returns an empty 'asks' and 'bids' list if the market is not known.
 
         :param market: Market ticker used by blockchain (eg. swth_eth1).
@@ -721,7 +799,7 @@ class PublicClient(object):
 
             public_client.get_order("4F54D2AE0D793F833806109B4278335BF3D392D4096B682B9A27AF9F8A8BCA58")
 
-        The expected return result for this function is as follows:
+        The expected return result for this function is as follows::
 
             {
                 "order_id":"4F54D2AE0D793F833806109B4278335BF3D392D4096B682B9A27AF9F8A8BCA58",
@@ -803,19 +881,23 @@ class PublicClient(object):
             ]
 
         .. warning::
+
             This endpoint is not well documented in official documents.
-            Parameter account is NOT required! It is possible to give more parameters, known ones are documented here.
+            Parameter account is NOT required! It is possible to provide more parameters,
+            known ones are documented here.
+
+        .. warning::
 
             This endpoint returns numbers as string(eg. "id":"990817") or integer(eg. "block_height":6117321)
 
         :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
-        :param before_id: return orders before id(exclusive)
-        :param after_id: return orders after id(exclusive)
+        :param before_id: return orders before id(exclusive).
+        :param after_id: return orders after id(exclusive).
         :param market: Market ticker used by blockchain (eg. swth_eth1).
-        :param order_type: Return specific orders, allowed values: 'limit', 'market', 'stop-market' or 'stop-limit'
-        :param initiator: Filter by user oder automated market maker order, allowed values: 'user' or 'amm'
-        :param order_status: Filter by order status, allowed values: 'open' or 'closed'
-        :param limit: Limit response, values above 200 have no effect
+        :param order_type: Return specific orders, allowed values: 'limit', 'market', 'stop-market' or 'stop-limit'.
+        :param initiator: Filter by user or automated market maker orders, allowed values: 'user' or 'amm'.
+        :param order_status: Filter by order status, allowed values: 'open' or 'closed'.
+        :param limit: Limit response, values above 200 have no effect.
         :return: List off orders as dict
         """
         api_params = {
@@ -831,6 +913,16 @@ class PublicClient(object):
         return self.request.get(path='/get_orders', params=api_params)
 
     def get_position(self, swth_address: str, market: str):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :param swth_address:
+        :param market:
+        :return:
+        """
         # TODO responses currently not available
         api_params = {
             "account": swth_address,
@@ -839,6 +931,15 @@ class PublicClient(object):
         return self.request.get(path='/get_position', params=api_params)
 
     def get_positions(self, swth_address: str):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :param swth_address:
+        :return:
+        """
         # TODO responses currently not available
         api_params = {
             "account": swth_address
@@ -846,6 +947,15 @@ class PublicClient(object):
         return self.request.get(path='/get_positions', params=api_params)
 
     def get_positions_sorted_by_pnl(self, market):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :param market:
+        :return:
+        """
         # TODO responses currently not available
         api_params = {
             "market": market
@@ -853,6 +963,15 @@ class PublicClient(object):
         return self.request.get(path='/get_positions_sorted_by_pnl', params=api_params)
 
     def get_positions_sorted_by_risk(self, market):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :param market:
+        :return:
+        """
         # TODO responses currently not available
         api_params = {
             "market": market
@@ -860,6 +979,15 @@ class PublicClient(object):
         return self.request.get(path='/get_positions_sorted_by_risk', params=api_params)
 
     def get_positions_sorted_by_size(self, market):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :param market:
+        :return:
+        """
         # TODO responses currently not available
         api_params = {
             "market": market
@@ -892,11 +1020,16 @@ class PublicClient(object):
             }
 
         .. warning::
+
             This endpoint is not well documented in official documents.
             Parameter 'market' is NOT required, but strongly recommended. The return result has an empty 'market' field.
 
+        .. warning::
+
             This endpoint returns amounts which are NOT human readable values. Consider 'base_precision' and
             'quote_precision' to calculate a multiplication factor = 10 ^ ('base_precision' - 'quote_precision')
+
+        .. warning::
 
             This endpoint returns numbers as string(eg. "last":"207000") or integer(eg. "block_height":0)
 
@@ -935,6 +1068,14 @@ class PublicClient(object):
         return self.request.get(path='/get_profile', params=api_params)
 
     def get_rich_list(self, token: str):
+        """
+
+        .. warning::
+            This endpoint is not working yet.
+
+        :param token:
+        :return:
+        """
         # TODO responses currently not available
         api_params = {
             "token": token
@@ -1014,7 +1155,7 @@ class PublicClient(object):
                 "address":"swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl",
                 "username":"",
                 "msg_type":"vote",
-                "msg":"{\"proposal_id\":10,\"voter\":\"swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl\",\"option\":\"Yes\"}",
+                "msg":'{\"proposal_id\":10,\"voter\":\"swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl\",\"option\":\"Yes\"}',
                 "code":"0",
                 "gas_used":"64818",
                 "gas_limit":"200000",
@@ -1027,8 +1168,12 @@ class PublicClient(object):
 
             This endpoint returns the same dict structure even if the transaction does not exist with default values!
 
+        .. note::
 
-        :param tx_hash:
+            The field 'msg' contain a escaped JSON string.
+
+
+        :param tx_hash: Transaction hash for a specific transaction.
         :return:
         """
         api_params = {
@@ -1079,7 +1224,7 @@ class PublicClient(object):
                     "address":"swth1xkahzn8ymps6xdu6feulutawu42fkyqz5fgvhx",
                     "username":"",
                     "msg_type":"create_order",
-                    "msg":"{\"market\":\"eth1_usdc1\",\"side\":\"buy\",\"quantity\":\"0.019\",\"type\":\"limit\",\"price\":\"1283.98\",\"is_post_only\":false,\"is_reduce_only\":false,\"originator\":\"swth1xkahzn8ymps6xdu6feulutawu42fkyqz5fgvhx\"}",
+                    "msg":'{\"market\":\"eth1_usdc1\",\"side\":\"buy\",\"quantity\":\"0.019\",\"type\":\"limit\",\"price\":\"1283.98\",\"is_post_only\":false,\"is_reduce_only\":false,\"originator\":\"swth1xkahzn8ymps6xdu6feulutawu42fkyqz5fgvhx\"}',
                     "code":"0",
                     "gas_used":"140666",
                     "gas_limit":"100000000000",
@@ -1089,6 +1234,10 @@ class PublicClient(object):
                 },
                 ...
             ]
+
+        .. note::
+
+            The field 'msg' contain a escaped JSON string.
 
         :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
         :param msg_type: filter by msg_type, allowed values can be fetch with 'get_transaction_types'
@@ -1118,7 +1267,7 @@ class PublicClient(object):
         """
         Get information about a token.
 
-         Example::
+        Example::
 
             public_client.get_token("swth")
 
@@ -1140,23 +1289,17 @@ class PublicClient(object):
             }
 
         .. warning::
+
             This endpoint returns numbers as string(eg. "delegated_supply":"100000000000000000") or integer(eg. "decimals":8)
 
 
-        :param denom: Denom used by tradehub
+        :param denom: Denom used by tradehub.
         :return: Information about token as dict.
         """
         api_params = {
             "token": denom
         }
         return self.request.get(path='/get_token', params=api_params)
-
-    def get_token_list(self):
-        token_list = []
-        tokens = self.get_tokens()
-        for token in tokens:
-            token_list.append(token["denom"])
-        return token_list
 
     def get_tokens(self) -> List[dict]:
         """
@@ -1194,6 +1337,15 @@ class PublicClient(object):
         return self.request.get(path='/get_tokens')
 
     def get_top_r_profits(self, market: str, limit: int):
+        """
+
+        .. warning::
+            This endpoint is not working yet.
+
+        :param market:
+        :param limit:
+        :return:
+        """
         # TODO responses currently not available
         api_params = {
             "market": market,
@@ -1202,6 +1354,13 @@ class PublicClient(object):
         return self.request.get(path='/get_top_r_profits', params=api_params)
 
     def get_total_balances(self):
+        """
+
+        .. warning::
+            This endpoint is not working yet.
+
+        :return:
+        """
         # TODO responses currently not available
         return self.request.get(path='/get_total_balances')
 
