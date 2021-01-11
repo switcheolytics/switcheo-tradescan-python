@@ -926,7 +926,6 @@ class PublicClient(object):
                 "username":"devel484"
             }
 
-
         :param swth_address: tradehub switcheo address starting with 'swth1' on mainnet and 'tswth1' on testnet.
         :return: Profile as dict
         """
@@ -1065,15 +1064,42 @@ class PublicClient(object):
         }
         return self.request.get(path='/get_transactions', params=api_params)
 
-    def get_token(self, token):
-        '''
-        This endpoint does not exist on the TradeHub nodes but it does exist in TradeScan.
-        This has benn built to mimic what TradeScan returns.
-        '''
-        if token is not None and token.lower() in self.tokens:
-            for get_token in self.get_tokens():
-                if get_token["denom"] == token.lower():
-                    return get_token
+    def get_token(self, denom) -> dict:
+        """
+        Get information about a token.
+
+         Example::
+
+            public_client.get_token("swth")
+
+        The expected return result for this function is as follows::
+
+            {
+                "name":"Switcheo",
+                "symbol":"swth",
+                "denom":"swth",
+                "decimals":8,
+                "blockchain":"neo",
+                "chain_id":4,
+                "asset_id":"32e125258b7db0a0dffde5bd03b2b859253538ab",
+                "is_active":true,
+                "is_collateral":false,
+                "lock_proxy_hash":"17d0f66eca7fcbfddc8d9706f20513bf5d7419cd",
+                "delegated_supply":"100000000000000000",
+                "originator":"swth1mw90en8tcqnvdjhp64qmyhuq4qasvhy25dpmvw"
+            }
+
+        .. warning::
+            This endpoint returns numbers as string(eg. "delegated_supply":"100000000000000000") or integer(eg. "decimals":8)
+
+
+        :param denom: Denom used by tradehub
+        :return: Information about token as dict.
+        """
+        api_params = {
+            "token": denom
+        }
+        return self.request.get(path='/get_token', params=api_params)
 
     def get_token_list(self):
         token_list = []
@@ -1083,7 +1109,7 @@ class PublicClient(object):
         return token_list
 
     def get_tokens(self):
-        return self.request.get(path = '/get_tokens')
+        return self.request.get(path='/get_tokens')
 
     def get_top_r_profits(self, market, limit):
         api_params = {}
