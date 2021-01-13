@@ -1,15 +1,13 @@
-from . import APITestCase
+from tests import APITestCase, DEVEL_AND_CO_SENTRY
 from tradehub.public_client import PublicClient
 
-DEVEL_AND_CO_SENTRY = "85.214.91.220"
 
-
-class TestTradeHubGetAddress(APITestCase):
+class TestTradeHubGetAccount(APITestCase):
 
     def setUp(self) -> None:
         self._client = PublicClient(DEVEL_AND_CO_SENTRY)
 
-    def test_get_address_structure(self):
+    def test_get_account_structure(self):
         """
         Check if response match expected dict structure.
         :return:
