@@ -496,6 +496,14 @@ class PublicClient(object):
         return self.request.get(path='/get_external_transfers', params=api_params)
 
     def get_insurance_fund_balance(self):
+        """
+
+        .. warning::
+
+            This endpoint is not working yet.
+
+        :return:
+        """
         # TODO result currently []
         return self.request.get(path='/get_insurance_balance')
 
@@ -703,7 +711,7 @@ class PublicClient(object):
         :return: List with returned market stats as dict
         """
 
-        if market_type not in ['futures', 'spot']:
+        if market_type and market_type not in ['futures', 'spot']:
             raise ValueError(f"Parameter 'market_type' only can be 'futures' or 'spot'. Got {market_type} instead.")
 
         api_params = {
@@ -1033,6 +1041,10 @@ class PublicClient(object):
 
             This endpoint returns numbers as string(eg. "last":"207000") or integer(eg. "block_height":0)
 
+        .. warning::
+
+            This endpoint returns a result even if the market is not known. Result contains default values.
+
         :param market: Market ticker used by blockchain (eg. swth_eth1).
         :return: Prices as dict
         """
@@ -1154,8 +1166,13 @@ class PublicClient(object):
                 "hash":"A93BEAC075562D4B6031262BDDE8B9A720346A54D8570A881E3671FEB6E6EFD4",
                 "address":"swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl",
                 "username":"",
-                "msg_type":"vote",
-                "msg":'{\"proposal_id\":10,\"voter\":\"swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl\",\"option\":\"Yes\"}',
+                "msgs": [
+                    {
+                        "msg_type":"vote",
+                        "msg":"{\"proposal_id\":10,\"voter\":\"swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl\",\"option\":\"Yes\"}"
+                    },
+                    ...
+                ],
                 "code":"0",
                 "gas_used":"64818",
                 "gas_limit":"200000",
