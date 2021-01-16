@@ -1,5 +1,13 @@
 from unittest import TestCase
 
+DEVEL_AND_CO_SENTRY = "85.214.91.220"
+
+WALLET_VALIDATOR = "swth1vwges9p847l9csj8ehrlgzajhmt4fcq4sd7gzl"
+
+WALLET_DEVEL = "swth1qlue2pat9cxx2s5xqrv0ashs475n9va963h4hz"
+
+USERNAME_DEVEL = "devel484"
+
 
 class APITestCase(TestCase):
 
@@ -28,7 +36,15 @@ class APITestCase(TestCase):
                 self.assertIsInstance(actual[key], list,
                                       msg=f"Expected field {self.path_to_dict_path(path+[key])} to be type list, "
                                           f"got type {type(actual[key])} instead")
-                if isinstance(expect[key][0], dict):
+
+                if not expect[key]:
+                    self.assertFalse(actual[key], msg=f"Expected empty list {self.path_to_dict_path(path+[key])},"
+                                                      f"received non empty list {actual[key]}")
+                else:
+                    self.assertTrue(actual[key], msg=f"Expected list {self.path_to_dict_path(path+[key])},"
+                                                    f"received empty list {actual[key]}")
+
+                if expect[key] and isinstance(expect[key][0], dict):
                     for i, entry in enumerate(actual[key]):
                         self.assertDictStructure(expect[key][0], entry, path + [key, i])
                 else:
@@ -37,9 +53,14 @@ class APITestCase(TestCase):
                                               msg=f"Expected field {self.path_to_dict_path(path+[key, i])} "
                                                   f"to be type {expect[key][0]}, got type {type(entry)} instead")
             else:
-                self.assertIsInstance(actual[key], expect[key],
-                                      msg=f"Expected field {self.path_to_dict_path(path+[key])} "
-                                          f"to be type {expect[key]}, got type {type(actual[key])} instead")
+                if type(expect[key]) == type:
+                    self.assertIsInstance(actual[key], expect[key],
+                                          msg=f"Expected field {self.path_to_dict_path(path+[key])} "
+                                              f"to be type {expect[key]}, got type {type(actual[key])} instead")
+                else:
+                    self.assertIn(type(actual[key]), expect[key].__args__,
+                                  msg=f"Expected field {self.path_to_dict_path(path+[key])} "
+                                      f"to be type {expect[key]}, got type {type(actual[key])} instead")
 
     @staticmethod
     def path_to_dict_path(path: list) -> str:
