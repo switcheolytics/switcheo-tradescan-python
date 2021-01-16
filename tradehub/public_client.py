@@ -207,27 +207,6 @@ class PublicClient(object):
     def get_status(self):
         return self.request.get(path = '/get_status')
 
-    def get_transaction(self, hash):
-        api_params = {}
-        api_params["hash"] = hash
-        return self.request.get(path = '/get_transaction', params = api_params)
-
-    def get_transaction_types(self):
-        return self.request.get(path = '/get_transaction_types')
-
-    def get_transactions(self, address, msg_type, height, start_block, end_block, before_id, after_id, order_by, limit):
-        api_params = {}
-        api_params["address"] = address
-        api_params["msg_type"] = msg_type
-        api_params["height"] = height
-        api_params["start_block"] = start_block
-        api_params["end_block"] = end_block
-        api_params["before_id"] = before_id
-        api_params["after_id"] = after_id
-        api_params["order_by"] = order_by
-        api_params["limit"] = limit
-        return self.request.get(path = '/get_transactions', params = api_params)
-
     def get_token(self, token):
         '''
         This endpoint does not exist on the TradeHub nodes but it does exist in TradeScan.
@@ -279,6 +258,34 @@ class PublicClient(object):
         api_params["order_by"] = order_by
         api_params["limit"] = limit
         return self.request.get(path = '/get_trades_by_account', params = api_params)
+
+    def get_transaction(self, hash):
+        api_params = {}
+        api_params["hash"] = hash
+        return self.request.get(path = '/get_transaction', params = api_params)
+
+    def get_transaction_types(self):
+        return self.request.get(path = '/get_transaction_types')
+
+    def get_transactions(self, address, msg_type, height, start_block, end_block, before_id, after_id, order_by, limit):
+        api_params = {}
+        api_params["address"] = address
+        api_params["msg_type"] = msg_type
+        api_params["height"] = height
+        api_params["start_block"] = start_block
+        api_params["end_block"] = end_block
+        api_params["before_id"] = before_id
+        api_params["after_id"] = after_id
+        api_params["order_by"] = order_by
+        api_params["limit"] = limit
+        return self.request.get(path = '/get_transactions', params = api_params)
+
+    def get_transactions_fees(self):
+        gas_fees = self.request.get(path = '/get_txns_fees')
+        fees = {}
+        for gas_fee in gas_fees["result"]:
+            fees[gas_fee["msg_type"]] = gas_fee["fee"]
+        return fees
 
     def get_username_check(self, username):
         api_params = {}
