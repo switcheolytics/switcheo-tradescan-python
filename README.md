@@ -11,7 +11,9 @@ Ideally this gets merged into the switcheo-python project as DeMex and TradeHub 
 
 ## Getting Started
 
+```
 pip install -r requirements.txt
+```
 
 ### Tradehub
 

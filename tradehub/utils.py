@@ -1,8 +1,18 @@
 import json
-import requests
+import math
 import multiprocessing as mp
+import requests
+
 from tradescan.public_client import PublicClient as TradescanPublicClient
 
+
+def sort_and_stringify_json(message):
+    """
+    Return a JSON message that is alphabetically sorted by the key name
+    Args:
+        message
+    """
+    return json.dumps(message, sort_keys=True, separators=(',', ':'))
 
 def validator_crawler(network = 'test'):
     peers_dict = {}
@@ -211,3 +221,9 @@ def parse_validator_status(request_json, validator_ip):
         "validator_pub_key": request_json["result"]["validator_info"]["pub_key"]["value"],
         "validator_voting_power": request_json["result"]["validator_info"]["voting_power"]
     }
+
+def to_tradehub_asset_amount(amount, power = 8):
+    if 0.00000001 < amount < 1000000:
+        return "{:.0f}".format(amount * math.pow(10, power))
+    else:
+        raise ValueError('Asset amount {} outside of acceptable range {}-{}.'.format(amount, 0.00000001, 1000000))
